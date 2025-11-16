@@ -36,31 +36,6 @@ blueprint:
           max: 3600
           unit_of_measurement: seconds
 
-    use_custom_settings:
-      name: Use Custom Color
-      description: Enable to also use a fixed color (brightness can still be time-based).
-      default: false
-      selector:
-        boolean:
-
-    brightness:
-      name: Default Brightness (0-255)
-      description: >
-        Default brightness when no time range matches, or when time-based
-        brightness is disabled.
-      default: 255
-      selector:
-        number:
-          min: 0
-          max: 255
-
-    color:
-      name: Color
-      description: Set the color (in RGB format).
-      default: [255, 255, 255]
-      selector:
-        color_rgb:
-
     # Tranche horaire 1
     time_range_1_enabled:
       name: Tranche 1 - Activer
@@ -296,8 +271,6 @@ trigger:
     to: "on"
 
 variables:
-  use_custom_settings: !input use_custom_settings
-  default_brightness: !input brightness
   condition_entity: !input condition_entity
   condition_states: !input condition_states
   sun_condition: !input sun_condition
@@ -341,7 +314,7 @@ variables:
     {% elif tr3_start <= now_time < tr3_end %}
       {{ tr3_enabled }}
     {% else %}
-      true
+      false
     {% endif %}
 
   # Mode actuel (color ou scene) selon la tranche horaire
@@ -354,12 +327,11 @@ variables:
     {% elif tr3_start <= now_time < tr3_end %}
       {{ tr3_mode }}
     {% else %}
-      color
+      none
     {% endif %}
 
   # Brightness automatiquement choisie selon l'heure actuelle
   calculated_brightness: >-
-    {% set default = default_brightness | int %}
     {% set now_time = now().strftime('%H:%M') %}
     {% if tr1_start <= now_time < tr1_end %}
       {{ tr1_brightness | int }}
@@ -368,7 +340,7 @@ variables:
     {% elif tr3_start <= now_time < tr3_end %}
       {{ tr3_brightness | int }}
     {% else %}
-      {{ default }}
+      0
     {% endif %}
 
   # Couleur automatiquement choisie selon l'heure actuelle
@@ -462,10 +434,10 @@ action:
             target:
               entity_id: "{{ calculated_scene }}"
       
-      # Si le mode est "color" avec use_custom_settings, utiliser la couleur de la tranche horaire
+      # Si le mode est "color", utiliser la couleur + brightness de la tranche horaire
       - conditions:
           - condition: template
-            value_template: "{{ current_mode == 'color' and use_custom_settings }}"
+            value_template: "{{ current_mode == 'color' }}"
         sequence:
           - choose:
               - conditions:
@@ -477,27 +449,6 @@ action:
                     data:
                       brightness: "{{ calculated_brightness }}"
                       rgb_color: "{{ calculated_color }}"
-              - conditions:
-                  - condition: template
-                    value_template: "{{ 'switch.' in entity_target.entity_id|string }}"
-                sequence:
-                  - service: switch.turn_on
-                    target: !input entity_target
-      
-      # Si le mode est "color" sans use_custom_settings, utiliser seulement la brightness
-      - conditions:
-          - condition: template
-            value_template: "{{ current_mode == 'color' and not use_custom_settings }}"
-        sequence:
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ 'light.' in entity_target.entity_id|string }}"
-                sequence:
-                  - service: light.turn_on
-                    target: !input entity_target
-                    data:
-                      brightness: "{{ calculated_brightness }}"
               - conditions:
                   - condition: template
                     value_template: "{{ 'switch.' in entity_target.entity_id|string }}"
