@@ -61,29 +61,98 @@ blueprint:
       selector:
         color_rgb:
 
-    use_time_brightness:
-      name: Use Time-based Brightness
-      description: >
-        Enable to adapt brightness according to the time ranges defined below.
-      default: false
+    # Tranche horaire 1
+    time_range_1_enabled:
+      name: Tranche 1 - Activer
+      description: Activer ou désactiver l'allumage durant la tranche 1
+      default: true
       selector:
         boolean:
 
-    time_brightness_json:
-      name: Time Ranges & Brightness (JSON)
-      description: >
-        JSON list of time ranges with brightness.
-        Example:
-        [
-          {"start":"06:00","end":"08:30","brightness":40},
-          {"start":"08:30","end":"22:30","brightness":255},
-          {"start":"22:30","end":"23:59","brightness":30},
-          {"start":"00:00","end":"06:00","brightness":10}
-        ]
-        All times are 24h HH:MM. Add/remove ranges as you like.
-      default: "[]"
+    time_range_1_start:
+      name: Tranche 1 - Heure de début
+      description: Heure de début de la tranche 1 (format HH:MM)
+      default: "00:00"
       selector:
-        text:
+        time:
+
+    time_range_1_end:
+      name: Tranche 1 - Heure de fin
+      description: Heure de fin de la tranche 1 (format HH:MM)
+      default: "06:00"
+      selector:
+        time:
+
+    time_range_1_brightness:
+      name: Tranche 1 - Luminosité
+      description: Luminosité pour la tranche 1 (0-255)
+      default: 10
+      selector:
+        number:
+          min: 0
+          max: 255
+
+    # Tranche horaire 2
+    time_range_2_enabled:
+      name: Tranche 2 - Activer
+      description: Activer ou désactiver l'allumage durant la tranche 2
+      default: true
+      selector:
+        boolean:
+
+    time_range_2_start:
+      name: Tranche 2 - Heure de début
+      description: Heure de début de la tranche 2 (format HH:MM)
+      default: "06:00"
+      selector:
+        time:
+
+    time_range_2_end:
+      name: Tranche 2 - Heure de fin
+      description: Heure de fin de la tranche 2 (format HH:MM)
+      default: "22:00"
+      selector:
+        time:
+
+    time_range_2_brightness:
+      name: Tranche 2 - Luminosité
+      description: Luminosité pour la tranche 2 (0-255)
+      default: 255
+      selector:
+        number:
+          min: 0
+          max: 255
+
+    # Tranche horaire 3
+    time_range_3_enabled:
+      name: Tranche 3 - Activer
+      description: Activer ou désactiver l'allumage durant la tranche 3
+      default: true
+      selector:
+        boolean:
+
+    time_range_3_start:
+      name: Tranche 3 - Heure de début
+      description: Heure de début de la tranche 3 (format HH:MM)
+      default: "22:00"
+      selector:
+        time:
+
+    time_range_3_end:
+      name: Tranche 3 - Heure de fin
+      description: Heure de fin de la tranche 3 (format HH:MM)
+      default: "23:59"
+      selector:
+        time:
+
+    time_range_3_brightness:
+      name: Tranche 3 - Luminosité
+      description: Luminosité pour la tranche 3 (0-255)
+      default: 30
+      selector:
+        number:
+          min: 0
+          max: 255
 
     condition_entity:
       name: Condition Entity (Optional)
@@ -147,8 +216,6 @@ trigger:
 
 variables:
   use_custom_settings: !input use_custom_settings
-  use_time_brightness: !input use_time_brightness
-  time_brightness_json: !input time_brightness_json
   default_brightness: !input brightness
   condition_entity: !input condition_entity
   condition_states: !input condition_states
@@ -158,39 +225,56 @@ variables:
   blocking_states: !input blocking_states
   entity_target: !input entity_target
 
-  # Brightness automatically chosen by current time and JSON config
+  # Tranches horaires
+  tr1_enabled: !input time_range_1_enabled
+  tr1_start: !input time_range_1_start
+  tr1_end: !input time_range_1_end
+  tr1_brightness: !input time_range_1_brightness
+  
+  tr2_enabled: !input time_range_2_enabled
+  tr2_start: !input time_range_2_start
+  tr2_end: !input time_range_2_end
+  tr2_brightness: !input time_range_2_brightness
+  
+  tr3_enabled: !input time_range_3_enabled
+  tr3_start: !input time_range_3_start
+  tr3_end: !input time_range_3_end
+  tr3_brightness: !input time_range_3_brightness
+
+  # Vérifier si on doit allumer selon la tranche horaire actuelle
+  should_turn_on: >-
+    {% set now_time = now().strftime('%H:%M') %}
+    {% if tr1_start <= now_time < tr1_end %}
+      {{ tr1_enabled }}
+    {% elif tr2_start <= now_time < tr2_end %}
+      {{ tr2_enabled }}
+    {% elif tr3_start <= now_time < tr3_end %}
+      {{ tr3_enabled }}
+    {% else %}
+      true
+    {% endif %}
+
+  # Brightness automatiquement choisie selon l'heure actuelle
   calculated_brightness: >-
     {% set default = default_brightness | int %}
-    {% if not use_time_brightness %}
-      {{ default }}
+    {% set now_time = now().strftime('%H:%M') %}
+    {% if tr1_start <= now_time < tr1_end %}
+      {{ tr1_brightness | int }}
+    {% elif tr2_start <= now_time < tr2_end %}
+      {{ tr2_brightness | int }}
+    {% elif tr3_start <= now_time < tr3_end %}
+      {{ tr3_brightness | int }}
     {% else %}
-      {% set raw = time_brightness_json | default('[]') %}
-      {% if raw | trim == '' %}
-        {{ default }}
-      {% else %}
-        {% set tb_list = raw | from_json %}
-        {% if tb_list is not iterable %}
-          {{ default }}
-        {% else %}
-          {% set now_time = now().strftime('%H:%M') %}
-          {% set ns = namespace(br=default) %}
-          {# Last matching range wins #}
-          {% for tb in tb_list %}
-            {% set start = tb.start if 'start' in tb else tb['start'] %}
-            {% set end = tb.end if 'end' in tb else tb['end'] %}
-            {% set b = tb.brightness if 'brightness' in tb else tb['brightness'] %}
-            {% if start <= now_time <= end %}
-              {% set ns.br = b | int %}
-            {% endif %}
-          {% endfor %}
-          {{ ns.br }}
-        {% endif %}
-      {% endif %}
+      {{ default }}
     {% endif %}
 
 condition:
   - condition: and
     conditions:
+      # Vérifier si l'allumage est autorisé pour la tranche horaire actuelle
+      - condition: template
+        value_template: "{{ should_turn_on }}"
+
       # Blocking entity (do not run if in one of the blocking states)
       - condition: or
         conditions:
