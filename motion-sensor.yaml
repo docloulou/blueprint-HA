@@ -83,6 +83,18 @@ blueprint:
       selector:
         time:
 
+    time_range_1_mode:
+      name: Tranche 1 - Mode
+      description: Choisir entre couleur+luminosité ou scène
+      default: color
+      selector:
+        select:
+          options:
+            - label: Couleur + Luminosité
+              value: color
+            - label: Scène
+              value: scene
+
     time_range_1_brightness:
       name: Tranche 1 - Luminosité
       description: Luminosité pour la tranche 1 (0-255)
@@ -91,6 +103,21 @@ blueprint:
         number:
           min: 0
           max: 255
+
+    time_range_1_color:
+      name: Tranche 1 - Couleur
+      description: Couleur pour la tranche 1 (format RGB)
+      default: [255, 220, 180]
+      selector:
+        color_rgb:
+
+    time_range_1_scene:
+      name: Tranche 1 - Scène
+      description: Scène à activer pour la tranche 1
+      default: ""
+      selector:
+        entity:
+          domain: scene
 
     # Tranche horaire 2
     time_range_2_enabled:
@@ -114,6 +141,18 @@ blueprint:
       selector:
         time:
 
+    time_range_2_mode:
+      name: Tranche 2 - Mode
+      description: Choisir entre couleur+luminosité ou scène
+      default: color
+      selector:
+        select:
+          options:
+            - label: Couleur + Luminosité
+              value: color
+            - label: Scène
+              value: scene
+
     time_range_2_brightness:
       name: Tranche 2 - Luminosité
       description: Luminosité pour la tranche 2 (0-255)
@@ -122,6 +161,21 @@ blueprint:
         number:
           min: 0
           max: 255
+
+    time_range_2_color:
+      name: Tranche 2 - Couleur
+      description: Couleur pour la tranche 2 (format RGB)
+      default: [255, 255, 255]
+      selector:
+        color_rgb:
+
+    time_range_2_scene:
+      name: Tranche 2 - Scène
+      description: Scène à activer pour la tranche 2
+      default: ""
+      selector:
+        entity:
+          domain: scene
 
     # Tranche horaire 3
     time_range_3_enabled:
@@ -145,6 +199,18 @@ blueprint:
       selector:
         time:
 
+    time_range_3_mode:
+      name: Tranche 3 - Mode
+      description: Choisir entre couleur+luminosité ou scène
+      default: color
+      selector:
+        select:
+          options:
+            - label: Couleur + Luminosité
+              value: color
+            - label: Scène
+              value: scene
+
     time_range_3_brightness:
       name: Tranche 3 - Luminosité
       description: Luminosité pour la tranche 3 (0-255)
@@ -153,6 +219,21 @@ blueprint:
         number:
           min: 0
           max: 255
+
+    time_range_3_color:
+      name: Tranche 3 - Couleur
+      description: Couleur pour la tranche 3 (format RGB)
+      default: [255, 180, 100]
+      selector:
+        color_rgb:
+
+    time_range_3_scene:
+      name: Tranche 3 - Scène
+      description: Scène à activer pour la tranche 3
+      default: ""
+      selector:
+        entity:
+          domain: scene
 
     condition_entity:
       name: Condition Entity (Optional)
@@ -229,17 +310,26 @@ variables:
   tr1_enabled: !input time_range_1_enabled
   tr1_start: !input time_range_1_start
   tr1_end: !input time_range_1_end
+  tr1_mode: !input time_range_1_mode
   tr1_brightness: !input time_range_1_brightness
+  tr1_color: !input time_range_1_color
+  tr1_scene: !input time_range_1_scene
   
   tr2_enabled: !input time_range_2_enabled
   tr2_start: !input time_range_2_start
   tr2_end: !input time_range_2_end
+  tr2_mode: !input time_range_2_mode
   tr2_brightness: !input time_range_2_brightness
+  tr2_color: !input time_range_2_color
+  tr2_scene: !input time_range_2_scene
   
   tr3_enabled: !input time_range_3_enabled
   tr3_start: !input time_range_3_start
   tr3_end: !input time_range_3_end
+  tr3_mode: !input time_range_3_mode
   tr3_brightness: !input time_range_3_brightness
+  tr3_color: !input time_range_3_color
+  tr3_scene: !input time_range_3_scene
 
   # Vérifier si on doit allumer selon la tranche horaire actuelle
   should_turn_on: >-
@@ -254,6 +344,19 @@ variables:
       true
     {% endif %}
 
+  # Mode actuel (color ou scene) selon la tranche horaire
+  current_mode: >-
+    {% set now_time = now().strftime('%H:%M') %}
+    {% if tr1_start <= now_time < tr1_end %}
+      {{ tr1_mode }}
+    {% elif tr2_start <= now_time < tr2_end %}
+      {{ tr2_mode }}
+    {% elif tr3_start <= now_time < tr3_end %}
+      {{ tr3_mode }}
+    {% else %}
+      color
+    {% endif %}
+
   # Brightness automatiquement choisie selon l'heure actuelle
   calculated_brightness: >-
     {% set default = default_brightness | int %}
@@ -266,6 +369,32 @@ variables:
       {{ tr3_brightness | int }}
     {% else %}
       {{ default }}
+    {% endif %}
+
+  # Couleur automatiquement choisie selon l'heure actuelle
+  calculated_color: >-
+    {% set now_time = now().strftime('%H:%M') %}
+    {% if tr1_start <= now_time < tr1_end %}
+      {{ tr1_color }}
+    {% elif tr2_start <= now_time < tr2_end %}
+      {{ tr2_color }}
+    {% elif tr3_start <= now_time < tr3_end %}
+      {{ tr3_color }}
+    {% else %}
+      [255, 255, 255]
+    {% endif %}
+
+  # Scène automatiquement choisie selon l'heure actuelle
+  calculated_scene: >-
+    {% set now_time = now().strftime('%H:%M') %}
+    {% if tr1_start <= now_time < tr1_end %}
+      {{ tr1_scene }}
+    {% elif tr2_start <= now_time < tr2_end %}
+      {{ tr2_scene }}
+    {% elif tr3_start <= now_time < tr3_end %}
+      {{ tr3_scene }}
+    {% else %}
+      
     {% endif %}
 
 condition:
@@ -324,9 +453,19 @@ condition:
 
 action:
   - choose:
+      # Si le mode est "scene", activer la scène
       - conditions:
           - condition: template
-            value_template: "{{ use_custom_settings }}"
+            value_template: "{{ current_mode == 'scene' and calculated_scene != '' }}"
+        sequence:
+          - service: scene.turn_on
+            target:
+              entity_id: "{{ calculated_scene }}"
+      
+      # Si le mode est "color" avec use_custom_settings, utiliser la couleur de la tranche horaire
+      - conditions:
+          - condition: template
+            value_template: "{{ current_mode == 'color' and use_custom_settings }}"
         sequence:
           - choose:
               - conditions:
@@ -337,29 +476,34 @@ action:
                     target: !input entity_target
                     data:
                       brightness: "{{ calculated_brightness }}"
-                      rgb_color: !input color
+                      rgb_color: "{{ calculated_color }}"
               - conditions:
                   - condition: template
                     value_template: "{{ 'switch.' in entity_target.entity_id|string }}"
                 sequence:
                   - service: switch.turn_on
                     target: !input entity_target
-    default:
-      - choose:
-          - conditions:
-              - condition: template
-                value_template: "{{ 'light.' in entity_target.entity_id|string }}"
-            sequence:
-              - service: light.turn_on
-                target: !input entity_target
-                data:
-                  brightness: "{{ calculated_brightness }}"
-          - conditions:
-              - condition: template
-                value_template: "{{ 'switch.' in entity_target.entity_id|string }}"
-            sequence:
-              - service: switch.turn_on
-                target: !input entity_target
+      
+      # Si le mode est "color" sans use_custom_settings, utiliser seulement la brightness
+      - conditions:
+          - condition: template
+            value_template: "{{ current_mode == 'color' and not use_custom_settings }}"
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: template
+                    value_template: "{{ 'light.' in entity_target.entity_id|string }}"
+                sequence:
+                  - service: light.turn_on
+                    target: !input entity_target
+                    data:
+                      brightness: "{{ calculated_brightness }}"
+              - conditions:
+                  - condition: template
+                    value_template: "{{ 'switch.' in entity_target.entity_id|string }}"
+                sequence:
+                  - service: switch.turn_on
+                    target: !input entity_target
 
   - wait_for_trigger:
       platform: state
