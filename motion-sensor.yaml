@@ -18,7 +18,7 @@ blueprint:
 
     entity_target:
       name: Lights and Switches
-      description: Select one or more lights or switches to control.
+      description: Select lights/switches (entity, device, area, or label).
       selector:
         target:
           entity:
