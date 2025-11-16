@@ -439,22 +439,15 @@ action:
           - condition: template
             value_template: "{{ current_mode == 'color' }}"
         sequence:
-          - choose:
-              - conditions:
-                  - condition: template
-                    value_template: "{{ 'light.' in entity_target.entity_id|string }}"
-                sequence:
-                  - service: light.turn_on
-                    target: !input entity_target
-                    data:
-                      brightness: "{{ calculated_brightness }}"
-                      rgb_color: "{{ calculated_color }}"
-              - conditions:
-                  - condition: template
-                    value_template: "{{ 'switch.' in entity_target.entity_id|string }}"
-                sequence:
-                  - service: switch.turn_on
-                    target: !input entity_target
+          # Allumer les lumières avec couleur et brightness (s'applique aux lights du target)
+          - service: light.turn_on
+            target: !input entity_target
+            data:
+              brightness: "{{ calculated_brightness }}"
+              rgb_color: "{{ calculated_color }}"
+          # Allumer les switches du target
+          - service: switch.turn_on
+            target: !input entity_target
 
   - wait_for_trigger:
       platform: state
@@ -463,16 +456,6 @@ action:
 
   - delay: !input no_motion_wait
 
-  - choose:
-      - conditions:
-          - condition: template
-            value_template: "{{ 'light.' in entity_target.entity_id|string }}"
-        sequence:
-          - service: light.turn_off
-            target: !input entity_target
-      - conditions:
-          - condition: template
-            value_template: "{{ 'switch.' in entity_target.entity_id|string }}"
-        sequence:
-          - service: switch.turn_off
-            target: !input entity_target
+  # Éteindre les lumières et switches
+  - service: homeassistant.turn_off
+    target: !input entity_target
