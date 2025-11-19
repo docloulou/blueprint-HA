@@ -1203,6 +1203,9 @@ action:
         - condition: template
           value_template: "{{ optional_switches_var | count > 0 }}"
       sequence:
+        - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+          timeout: "24:00:00"
+          continue_on_timeout: false
         - delay:
             seconds: >
               {% if is_state('sun.sun','above_horizon') %}
@@ -1247,6 +1250,9 @@ action:
             {% endif %}
             {{ lights | count > 0 }}
       sequence:
+        - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+          timeout: "24:00:00"
+          continue_on_timeout: false
         - delay:
             seconds: "{{ auto_off_main_var | default(0) | float }}"
         - service: light.turn_off
@@ -1323,6 +1329,9 @@ action:
                 or (day_lights_var is iterable and (day_lights_var | select('string') | list | count > 0))
                 or (off_scene_day_var is string and off_scene_day_var != '') }}
       sequence:
+        - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+          timeout: "24:00:00"
+          continue_on_timeout: false
         - delay:
             seconds: "{{ auto_off_day_var | default(0) | float }}"
         - choose:
@@ -1469,6 +1478,9 @@ action:
                 or (night_lights_var is iterable and (night_lights_var | select('string') | list | count > 0))
                 or (off_scene_night_var is string and off_scene_night_var != '') }}
       sequence:
+        - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+          timeout: "24:00:00"
+          continue_on_timeout: false
         - delay:
             seconds: "{{ auto_off_night_var | default(0) | float }}"
         - choose:
@@ -1606,6 +1618,9 @@ action:
             {% endif %}
             {{ lights | count > 0 }}
       sequence:
+        - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+          timeout: "24:00:00"
+          continue_on_timeout: false
         - delay:
             seconds: "{{ auto_off_circadian_var | default(0) | float }}"
         - service: light.turn_off
@@ -1881,6 +1896,9 @@ action:
                   | selectattr('state','eq','on') 
                   | list | count == 0 }}
         sequence:
+          - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+            timeout: "24:00:00"
+            continue_on_timeout: false
           - delay:
               seconds: "{{ failsafe_timer_main_var | default(0) | float }}"
           - choose:
@@ -1971,6 +1989,9 @@ action:
           value_template: >
             {{ expand(motion_sensors | default([])) | selectattr('state','eq','on') | list | count == 0 }}
       sequence:
+        - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+          timeout: "24:00:00"
+          continue_on_timeout: false
         - delay:
             seconds: "{{ failsafe_timer_day_var | default(0) | float }}"
         - service: light.turn_off
@@ -2026,6 +2047,9 @@ action:
           value_template: >
             {{ expand(motion_sensors | default([])) | selectattr('state','eq','on') | list | count == 0 }}
       sequence:
+        - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+          timeout: "24:00:00"
+          continue_on_timeout: false
         - delay:
             seconds: "{{ failsafe_timer_day_var | default(0) | float }}"
         - service: scene.turn_on
@@ -2109,6 +2133,9 @@ action:
           value_template: >
             {{ expand(motion_sensors | default([])) | selectattr('state','eq','on') | list | count == 0 }}
       sequence:
+        - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+          timeout: "24:00:00"
+          continue_on_timeout: false
         - delay:
             seconds: "{{ failsafe_timer_night_var | default(0) | float }}"
         - service: light.turn_off
@@ -2164,6 +2191,9 @@ action:
           value_template: >
             {{ expand(motion_sensors | default([])) | selectattr('state','eq','on') | list | count == 0 }}
       sequence:
+        - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+          timeout: "24:00:00"
+          continue_on_timeout: false
         - delay:
             seconds: "{{ failsafe_timer_night_var | default(0) | float }}"
         - service: scene.turn_on
@@ -2245,6 +2275,9 @@ action:
                     {% endif %}
                     {{ lights | select('is_state','on') | list | count > 0 }}
               sequence:
+                - wait_template: "{{ expand(motion_sensors_var) | selectattr('state', 'eq', 'off') | list | length == (motion_sensors_var | list | length) }}"
+                  timeout: "24:00:00"
+                  continue_on_timeout: false
                 - delay:
                     seconds: "{{ failsafe_timer_circadian_var | default(0) | float }}"
                 - service: light.turn_off
